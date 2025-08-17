@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": {
+    "inquiries": [
+      {
+        "id": "inq-001",
+        "inquiryNumber": "INQ-2024-001",
+        "productName": "Test Product 1",
+        "materialType": "Steel",
+        "specifications": "100x50x20mm",
+        "quantity": 100,
+        "status": "published",
+        "createdBy": "buyer_test",
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      {
+        "id": "inq-002",
+        "inquiryNumber": "INQ-2024-002",
+        "productName": "Test Product 2",
+        "materialType": "Aluminum",
+        "specifications": "200x100x30mm",
+        "quantity": 200,
+        "status": "replied",
+        "createdBy": "buyer_test",
+        "createdAt": "2024-01-02T00:00:00Z"
+      }
+    ],
+    "total": 1000,
+    "page": 1,
+    "limit": 20
+  }
+}
