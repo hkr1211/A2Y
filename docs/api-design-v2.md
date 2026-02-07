@@ -1,9 +1,9 @@
 # A2Y 贸易询单订单系统 — API 接口详细设计
 
-> 版本：2.0
+> 版本：2.1
 > 日期：2026-02-07
 > 前置文档：requirements-v2.md, architecture-v2.md
-> 状态：待确认
+> 状态：已确认
 
 ---
 
@@ -77,6 +77,9 @@
 | search | string | - | 关键词搜索 |
 | sort | string | created_at | 排序字段 |
 | order | string | desc | 排序方向：asc / desc |
+| format | string | - | 设为 `excel` 时返回 Excel 文件流而非 JSON |
+
+当 `format=excel` 时，忽略 page/pageSize，导出符合筛选条件的全部数据，响应 Content-Type 为 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`。
 
 ---
 
@@ -115,20 +118,6 @@
 
 ---
 
-### POST /api/auth/logout
-
-退出登录。需要认证。
-
-**成功响应 (200)：**
-```json
-{
-  "success": true,
-  "data": { "message": "已退出登录" }
-}
-```
-
----
-
 ### GET /api/auth/me
 
 获取当前登录用户信息。需要认证。
@@ -147,6 +136,8 @@
   }
 }
 ```
+
+说明：不提供 logout 接口。JWT 无状态，退出登录由前端清除本地 token 实现。
 
 ---
 
@@ -178,9 +169,9 @@
 
 ### GET /api/users
 
-获取用户列表。
+获取用户列表。支持 `format=excel` 导出。
 
-**查询参数：** page, pageSize, search, role
+**额外查询参数：** role
 
 **成功响应 (200)：**
 ```json
@@ -285,9 +276,9 @@
 
 ### GET /api/inquiries
 
-获取询单列表（不含已软删除）。所有角色可访问。
+获取询单列表（不含已软删除）。所有角色可访问。支持 `format=excel` 导出。
 
-**查询参数：** page, pageSize, search, status, sort, order
+**额外查询参数：** status
 
 search 搜索范围：inquiry_number, product_name
 
@@ -328,7 +319,7 @@ search 搜索范围：inquiry_number, product_name
 
 ### GET /api/inquiries/:id
 
-获取询单详情。
+获取询单详情。内嵌附件列表和报价历史，无需额外请求。
 
 **成功响应 (200)：**
 ```json
@@ -353,6 +344,7 @@ search 搜索范围：inquiry_number, product_name
         "originalName": "design.pdf",
         "mimeType": "application/pdf",
         "size": 1048576,
+        "uploadedBy": { "id": "uuid", "username": "tanaka" },
         "createdAt": "2026-02-07T10:00:00.000Z"
       }
     ],
@@ -420,35 +412,27 @@ search 搜索范围：inquiry_number, product_name
 
 ---
 
-### PUT /api/inquiries/:id/publish
+### PUT /api/inquiries/:id/action
 
-发布询单。仅 buyer 且为创建者，状态须为 draft。
+执行询单状态操作。
 
-**成功响应 (200)：** 返回更新后的询单对象，status 为 `published`
+**请求：**
+```json
+{
+  "action": "publish"
+}
+```
 
-触发：通知所有 supplier 用户
+**action 取值：**
 
----
+| action | 角色要求 | 前置状态 | 结果状态 | 说明 |
+|--------|---------|---------|---------|------|
+| `publish` | buyer（创建者） | draft | published | 发布询单，通知所有 supplier |
+| `cancel` | buyer（创建者） | published（未被报价） | cancelled | 作废询单 |
 
-### PUT /api/inquiries/:id/cancel
+**成功响应 (200)：** 返回更新后的询单对象
 
-作废询单。仅 buyer 且为创建者，状态须为 published 且未被报价。
-
-**成功响应 (200)：** 返回更新后的询单对象，status 为 `cancelled`
-
-**错误 (400)：** `BUSINESS_ERROR` — 已被报价的询单不能作废
-
----
-
-### GET /api/inquiries/export
-
-导出询单列表为 Excel。
-
-**查询参数：** search, status（同列表筛选条件）
-
-**成功响应 (200)：** Content-Type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-
-返回 Excel 文件流。
+**错误 (400)：** `BUSINESS_ERROR` — 当前状态不允许此操作（如已被报价不能作废）
 
 ---
 
@@ -456,7 +440,7 @@ search 搜索范围：inquiry_number, product_name
 
 ### POST /api/quotations
 
-创建报价（对某个询单）。仅 supplier。
+创建报价（对某个询单）。仅 supplier。已有报价时自动递增版本号。
 
 **请求：**
 ```json
@@ -471,26 +455,11 @@ search 搜索范围：inquiry_number, product_name
 
 **成功响应 (201)：** 返回创建的报价对象，version 自动递增
 
-**错误 (400)：** `BUSINESS_ERROR` — 询单状态不允许报价（非 published/quoted）
+首次报价时询单状态从 `published` 变为 `quoted`。
+
+**错误 (400)：** `BUSINESS_ERROR` — 询单状态不允许报价 / 报价已被撤回需先恢复
 
 触发：通知询单创建者
-
----
-
-### GET /api/quotations/inquiry/:inquiryId
-
-获取某询单的全部报价历史。按 version 倒序。
-
-**成功响应 (200)：**
-```json
-{
-  "success": true,
-  "data": [
-    { "id": "uuid", "version": 2, "unitPrice": 15.50, "totalPrice": 15500.00, "deliveryDays": 30, "remarks": "含运费", "isWithdrawn": false, "createdBy": { "id": "uuid", "username": "zhangsan" }, "createdAt": "..." },
-    { "id": "uuid", "version": 1, "unitPrice": 18.00, "totalPrice": 18000.00, "deliveryDays": 45, "remarks": null, "isWithdrawn": false, "createdBy": { "id": "uuid", "username": "zhangsan" }, "createdAt": "..." }
-  ]
-}
-```
 
 ---
 
@@ -510,45 +479,50 @@ search 搜索范围：inquiry_number, product_name
 
 **错误 (400)：** `BUSINESS_ERROR` — 询单已转为订单，不能撤回
 
+说明：报价历史通过 `GET /api/inquiries/:id` 的 quotations 字段获取，无需独立接口。
+
 ---
 
 ## 六、订单模块 `/api/orders`
 
 ### GET /api/orders
 
-获取订单列表。所有角色可访问。
+获取订单列表。所有角色可访问。支持 `format=excel` 导出。
 
-**查询参数：** page, pageSize, search, status, sort, order
+**额外查询参数：** status
 
 search 搜索范围：order_number, product_name
 
-**成功响应 (200)：** 结构同询单列表，字段替换为订单字段，额外包含：
+**成功响应 (200)：**
 ```json
 {
-  "items": [
-    {
-      "id": "uuid",
-      "orderNumber": "ORD-20260207-0001",
-      "inquiryId": "uuid 或 null",
-      "productName": "铝合金零件",
-      "materialType": "6061铝合金",
-      "specifications": "100x50x30mm",
-      "specialRequirements": null,
-      "unitPrice": 15.50,
-      "quantity": 1000,
-      "totalPrice": 15500.00,
-      "status": "confirmed",
-      "createdBy": { "id": "uuid", "username": "tanaka" },
-      "confirmedBy": { "id": "uuid", "username": "zhangsan" },
-      "attachmentCount": 3,
-      "unreadChatCount": 0,
-      "createdAt": "2026-02-07T14:00:00.000Z",
-      "updatedAt": "2026-02-07T15:00:00.000Z"
-    }
-  ],
-  "total": 30,
-  "page": 1,
-  "pageSize": 20
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "orderNumber": "ORD-20260207-0001",
+        "inquiryId": null,
+        "productName": "铝合金零件",
+        "materialType": "6061铝合金",
+        "specifications": "100x50x30mm",
+        "specialRequirements": null,
+        "unitPrice": 15.50,
+        "quantity": 1000,
+        "totalPrice": 15500.00,
+        "status": "confirmed",
+        "createdBy": { "id": "uuid", "username": "tanaka" },
+        "confirmedBy": { "id": "uuid", "username": "zhangsan" },
+        "attachmentCount": 3,
+        "unreadChatCount": 0,
+        "createdAt": "2026-02-07T14:00:00.000Z",
+        "updatedAt": "2026-02-07T15:00:00.000Z"
+      }
+    ],
+    "total": 30,
+    "page": 1,
+    "pageSize": 20
+  }
 }
 ```
 
@@ -556,9 +530,44 @@ search 搜索范围：order_number, product_name
 
 ### GET /api/orders/:id
 
-获取订单详情（含附件列表）。
+获取订单详情。内嵌附件列表和关联询单摘要。
 
-**成功响应 (200)：** 包含完整订单信息 + `attachments[]` + `relatedInquiry`（如有）
+**成功响应 (200)：**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "orderNumber": "ORD-20260207-0001",
+    "productName": "铝合金零件",
+    "materialType": "6061铝合金",
+    "specifications": "100x50x30mm",
+    "specialRequirements": "表面阳极氧化处理",
+    "unitPrice": 15.50,
+    "quantity": 1000,
+    "totalPrice": 15500.00,
+    "status": "shipped",
+    "createdBy": { "id": "uuid", "username": "tanaka" },
+    "confirmedBy": { "id": "uuid", "username": "zhangsan" },
+    "relatedInquiry": {
+      "id": "uuid",
+      "inquiryNumber": "INQ-20260207-0001"
+    },
+    "attachments": [
+      {
+        "id": "uuid",
+        "originalName": "invoice.pdf",
+        "mimeType": "application/pdf",
+        "size": 524288,
+        "uploadedBy": { "id": "uuid", "username": "zhangsan" },
+        "createdAt": "2026-02-10T10:00:00.000Z"
+      }
+    ],
+    "createdAt": "2026-02-07T14:00:00.000Z",
+    "updatedAt": "2026-02-10T10:00:00.000Z"
+  }
+}
+```
 
 ---
 
@@ -595,80 +604,41 @@ search 搜索范围：order_number, product_name
 
 ---
 
-### PUT /api/orders/:id/cancel
+### PUT /api/orders/:id/action
 
-买方作废订单。仅 buyer 且为创建者，状态须为 pending。
+执行订单状态操作。
 
-**成功响应 (200)：** status 变为 `cancelled`
-
----
-
-### PUT /api/orders/:id/reject
-
-供应商拒绝订单。仅 supplier，状态须为 pending。
-
-**请求（可选）：**
+**请求：**
 ```json
 {
+  "action": "confirm"
+}
+```
+
+拒绝时可附带原因：
+```json
+{
+  "action": "reject",
   "reason": "交期无法满足"
 }
 ```
 
-**成功响应 (200)：** status 变为 `rejected`
+**action 取值：**
 
-触发：通知订单创建者
+| action | 角色要求 | 前置状态 | 结果状态 | 说明 |
+|--------|---------|---------|---------|------|
+| `cancel` | buyer（创建者） | pending | cancelled | 买方作废订单 |
+| `reject` | supplier | pending | rejected | 供应商拒绝订单，可附 reason |
+| `confirm` | supplier | pending | confirmed | 供应商确认订单，记录 confirmedBy |
+| `start_production` | supplier | confirmed | production | 开始生产 |
+| `ship` | supplier | production | shipped | 发货（须已上传附件） |
+| `complete` | buyer（创建者） | shipped | completed | 买方确认收货 |
 
----
+**成功响应 (200)：** 返回更新后的订单对象
 
-### PUT /api/orders/:id/confirm
+触发：每次状态变更通知对方（buyer↔supplier）
 
-供应商确认订单。仅 supplier，状态须为 pending。
-
-**成功响应 (200)：** status 变为 `confirmed`，confirmedBy 记录供应商 ID
-
-触发：通知订单创建者
-
----
-
-### PUT /api/orders/:id/start-production
-
-供应商更新为生产中。仅 supplier，状态须为 confirmed。
-
-**成功响应 (200)：** status 变为 `production`
-
-触发：通知订单创建者
-
----
-
-### PUT /api/orders/:id/ship
-
-供应商发货。仅 supplier，状态须为 production。
-
-**说明：** 发货时必须上传至少一个附件（发票/运单/材质单），附件通过 `/api/files` 接口预先上传，此接口只负责状态变更。
-
-**成功响应 (200)：** status 变为 `shipped`
-
-触发：通知订单创建者
-
----
-
-### PUT /api/orders/:id/complete
-
-买方确认收货。仅 buyer 且为创建者，状态须为 shipped。
-
-**成功响应 (200)：** status 变为 `completed`
-
-触发：通知供应商
-
----
-
-### GET /api/orders/export
-
-导出订单列表为 Excel。
-
-**查询参数：** search, status
-
-**成功响应 (200)：** Excel 文件流
+**错误 (400)：** `BUSINESS_ERROR` — 当前状态不允许此操作
 
 ---
 
@@ -702,6 +672,10 @@ search 搜索范围：order_number, product_name
   }
 }
 ```
+
+**文件类型白名单：** `.jpg`, `.jpeg`, `.png`, `.pdf`, `.xlsx`, `.xls`, `.docx`, `.doc`, `.step`, `.stp`, `.stl`
+
+**大小限制：** 单文件 20MB
 
 **错误 (400)：** `VALIDATION_ERROR` — 文件类型不支持 / 文件过大
 
@@ -754,8 +728,8 @@ search 搜索范围：order_number, product_name
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| since | string (ISO 8601) | 可选，只返回此时间之后的消息（轮询用） |
-| page | number | 首次加载用分页 |
+| since | string (ISO 8601) | 可选，只返回此时间之后的消息（轮询增量获取） |
+| page | number | 首次加载用分页（与 since 互斥） |
 | pageSize | number | 默认 50 |
 
 **成功响应 (200)：**
@@ -815,7 +789,7 @@ search 搜索范围：order_number, product_name
 
 获取当前用户的通知列表。
 
-**查询参数：** page, pageSize, isRead (boolean, 可选)
+**额外查询参数：** isRead (boolean, 可选)
 
 **成功响应 (200)：**
 ```json
@@ -845,7 +819,7 @@ search 搜索范围：order_number, product_name
 
 ### GET /api/notifications/unread-count
 
-获取未读通知数量（轮询用）。
+获取未读通知数量（轮询用，每 5 秒调一次）。
 
 **成功响应 (200)：**
 ```json
@@ -857,9 +831,23 @@ search 搜索范围：order_number, product_name
 
 ---
 
-### PUT /api/notifications/:id/read
+### PUT /api/notifications/read
 
-标记单条通知为已读。
+标记通知已读。支持单条和全部。
+
+**标记单条：**
+```json
+{
+  "id": "uuid"
+}
+```
+
+**标记全部：**
+```json
+{
+  "all": true
+}
+```
 
 **成功响应 (200)：**
 ```json
@@ -871,32 +859,16 @@ search 搜索范围：order_number, product_name
 
 ---
 
-### PUT /api/notifications/read-all
-
-标记所有通知为已读。
-
-**成功响应 (200)：**
-```json
-{
-  "success": true,
-  "data": { "message": "已全部标记已读" }
-}
-```
-
----
-
 ## 十、审计日志模块 `/api/audit-logs`（仅 admin）
 
 ### GET /api/audit-logs
 
-获取审计日志列表。
+获取审计日志列表。支持 `format=excel` 导出。
 
-**查询参数：**
+**额外查询参数：**
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| page | number | 页码 |
-| pageSize | number | 每页条数 |
 | userId | string | 按操作人筛选 |
 | action | string | 按操作类型筛选 |
 | targetType | string | 按对象类型筛选 |
@@ -929,23 +901,13 @@ search 搜索范围：order_number, product_name
 
 ---
 
-### GET /api/audit-logs/export
-
-导出审计日志为 Excel。
-
-**查询参数：** 同列表筛选条件
-
-**成功响应 (200)：** Excel 文件流
-
----
-
 ## 十一、回收站模块 `/api/trash`（仅 admin）
 
 ### GET /api/trash
 
 获取已软删除的数据列表。
 
-**查询参数：** page, pageSize, type（`inquiry` / `order` / `user`）
+**额外查询参数：** type（`inquiry` / `order` / `user`）
 
 **成功响应 (200)：**
 ```json
@@ -1046,56 +1008,44 @@ search 搜索范围：order_number, product_name
 
 ## 十三、接口清单总览
 
-| 方法 | 路径 | 角色 | 说明 |
-|------|------|------|------|
-| POST | /api/auth/login | 公开 | 登录 |
-| POST | /api/auth/logout | 已认证 | 退出 |
-| GET | /api/auth/me | 已认证 | 获取个人信息 |
-| PUT | /api/auth/password | 已认证 | 修改密码 |
-| GET | /api/users | admin | 用户列表 |
-| POST | /api/users | admin | 创建用户 |
-| PUT | /api/users/:id | admin | 修改用户 |
-| PUT | /api/users/:id/reset-password | admin | 重置密码 |
-| DELETE | /api/users/:id | admin | 删除用户 |
-| GET | /api/inquiries | 已认证 | 询单列表 |
-| GET | /api/inquiries/:id | 已认证 | 询单详情 |
-| POST | /api/inquiries | buyer | 创建询单 |
-| PUT | /api/inquiries/:id | buyer(创建者) | 修改询单 |
-| PUT | /api/inquiries/:id/publish | buyer(创建者) | 发布询单 |
-| PUT | /api/inquiries/:id/cancel | buyer(创建者) | 作废询单 |
-| GET | /api/inquiries/export | 已认证 | 导出询单 Excel |
-| POST | /api/quotations | supplier | 提交报价 |
-| GET | /api/quotations/inquiry/:inquiryId | 已认证 | 报价历史 |
-| PUT | /api/quotations/inquiry/:inquiryId/withdraw | supplier(创建者) | 撤回报价 |
-| GET | /api/orders | 已认证 | 订单列表 |
-| GET | /api/orders/:id | 已认证 | 订单详情 |
-| POST | /api/orders | buyer | 创建订单 |
-| PUT | /api/orders/:id/cancel | buyer(创建者) | 作废订单 |
-| PUT | /api/orders/:id/reject | supplier | 拒绝订单 |
-| PUT | /api/orders/:id/confirm | supplier | 确认订单 |
-| PUT | /api/orders/:id/start-production | supplier | 开始生产 |
-| PUT | /api/orders/:id/ship | supplier | 发货 |
-| PUT | /api/orders/:id/complete | buyer(创建者) | 确认收货 |
-| GET | /api/orders/export | 已认证 | 导出订单 Excel |
-| POST | /api/files | 已认证 | 上传文件 |
-| GET | /api/files/:id/download | 已认证 | 获取下载链接 |
-| DELETE | /api/files/:id | 上传者/admin | 删除文件 |
-| GET | /api/chat/:type/:id/messages | 已认证 | 获取聊天消息 |
-| POST | /api/chat/:type/:id/messages | 已认证 | 发送消息 |
-| PUT | /api/chat/:type/:id/read | 已认证 | 标记已读 |
-| GET | /api/notifications | 已认证 | 通知列表 |
-| GET | /api/notifications/unread-count | 已认证 | 未读数 |
-| PUT | /api/notifications/:id/read | 已认证 | 标记已读 |
-| PUT | /api/notifications/read-all | 已认证 | 全部已读 |
-| GET | /api/audit-logs | admin | 审计日志 |
-| GET | /api/audit-logs/export | admin | 导出日志 |
-| GET | /api/trash | admin | 回收站 |
-| PUT | /api/trash/:type/:id/restore | admin | 恢复数据 |
-| DELETE | /api/trash/:type/:id | admin | 永久删除 |
-| GET | /api/dashboard | 已认证 | Dashboard |
+| # | 方法 | 路径 | 角色 | 说明 |
+|---|------|------|------|------|
+| 1 | POST | /api/auth/login | 公开 | 登录 |
+| 2 | GET | /api/auth/me | 已认证 | 获取个人信息 |
+| 3 | PUT | /api/auth/password | 已认证 | 修改密码 |
+| 4 | GET | /api/users | admin | 用户列表（+Excel 导出） |
+| 5 | POST | /api/users | admin | 创建用户 |
+| 6 | PUT | /api/users/:id | admin | 修改用户 |
+| 7 | PUT | /api/users/:id/reset-password | admin | 重置密码 |
+| 8 | DELETE | /api/users/:id | admin | 删除用户 |
+| 9 | GET | /api/inquiries | 已认证 | 询单列表（+Excel 导出） |
+| 10 | GET | /api/inquiries/:id | 已认证 | 询单详情（含附件+报价历史） |
+| 11 | POST | /api/inquiries | buyer | 创建询单 |
+| 12 | PUT | /api/inquiries/:id | buyer(创建者) | 修改询单 |
+| 13 | PUT | /api/inquiries/:id/action | buyer(创建者) | 询单状态操作（publish/cancel） |
+| 14 | POST | /api/quotations | supplier | 提交/更新报价 |
+| 15 | PUT | /api/quotations/inquiry/:id/withdraw | supplier(创建者) | 撤回报价 |
+| 16 | GET | /api/orders | 已认证 | 订单列表（+Excel 导出） |
+| 17 | GET | /api/orders/:id | 已认证 | 订单详情（含附件+关联询单） |
+| 18 | POST | /api/orders | buyer | 创建订单 |
+| 19 | PUT | /api/orders/:id/action | buyer/supplier | 订单状态操作（6 种 action） |
+| 20 | POST | /api/files | 已认证 | 上传文件 |
+| 21 | GET | /api/files/:id/download | 已认证 | 获取下载链接 |
+| 22 | DELETE | /api/files/:id | 上传者/admin | 删除文件 |
+| 23 | GET | /api/chat/:type/:id/messages | 已认证 | 获取聊天消息 |
+| 24 | POST | /api/chat/:type/:id/messages | 已认证 | 发送消息 |
+| 25 | PUT | /api/chat/:type/:id/read | 已认证 | 标记聊天已读 |
+| 26 | GET | /api/notifications | 已认证 | 通知列表 |
+| 27 | GET | /api/notifications/unread-count | 已认证 | 未读通知数 |
+| 28 | PUT | /api/notifications/read | 已认证 | 标记通知已读（单条/全部） |
+| 29 | GET | /api/audit-logs | admin | 审计日志（+Excel 导出） |
+| 30 | GET | /api/trash | admin | 回收站列表 |
+| 31 | PUT | /api/trash/:type/:id/restore | admin | 恢复数据 |
+| 32 | DELETE | /api/trash/:type/:id | admin | 永久删除 |
+| 33 | GET | /api/dashboard | 已认证 | Dashboard 数据 |
 
-**合计：42 个接口**
+**合计：33 个接口**
 
 ---
 
-> **下一步：** 确认 API 设计后，进入**第四步：数据库详细设计**（完整建表 SQL + 索引 + 迁移脚本），然后第五步制定**实施计划**（分阶段开发排期）。
+> **下一步：** 进入**第四步：数据库详细设计**（完整建表 SQL + 索引 + 迁移脚本），然后**第五步：实施计划**。
