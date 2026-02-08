@@ -2,8 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { createApp } from './app.js';
-import { connectDatabase, closeDatabase } from './config/database.js';
+import { connectDatabase, closeDatabase, getPool } from './config/database.js';
 import { MigrationRunner } from './utils/migrationRunner.js';
+import { InitializationService } from './services/InitializationService.js';
 import { logger } from './utils/logger.js';
 
 async function main(): Promise<void> {
@@ -15,8 +16,12 @@ async function main(): Promise<void> {
     const migrationRunner = new MigrationRunner(pool);
     await migrationRunner.run();
 
+    // Seed default admin user
+    const initService = new InitializationService(pool);
+    await initService.seedDefaultAdmin();
+
     // Create and start Express app
-    const app = createApp();
+    const app = createApp(getPool());
     const port = parseInt(process.env.PORT || '3000', 10);
 
     const server = app.listen(port, () => {

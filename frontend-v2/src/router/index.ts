@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import AppLayout from '@/components/layout/AppLayout.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,20 +12,36 @@ const router = createRouter({
     },
     {
       path: '/',
-      name: 'Dashboard',
-      component: () => import('@/views/DashboardView.vue'),
-      meta: { title: 'menu.dashboard' },
+      component: AppLayout,
+      children: [
+        {
+          path: '',
+          name: 'Dashboard',
+          component: () => import('@/views/DashboardView.vue'),
+          meta: { title: 'menu.dashboard' },
+        },
+        {
+          path: 'users',
+          name: 'Users',
+          component: () => import('@/views/UserListView.vue'),
+          meta: { title: 'menu.users', requiredRole: 'admin' },
+        },
+        {
+          path: 'change-password',
+          name: 'ChangePassword',
+          component: () => import('@/views/ChangePasswordView.vue'),
+          meta: { title: 'user.changePassword' },
+        },
+      ],
     },
-    // Phase 2+: More routes will be added here
   ],
 });
 
-// Navigation guard: redirect to login if not authenticated
+// Navigation guard
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token');
 
   if (to.meta.public) {
-    // If already logged in, redirect to dashboard
     if (token && to.name === 'Login') {
       next({ name: 'Dashboard' });
     } else {
@@ -36,6 +53,16 @@ router.beforeEach((to, _from, next) => {
   if (!token) {
     next({ name: 'Login' });
     return;
+  }
+
+  // Role-based access control
+  if (to.meta.requiredRole) {
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user?.role !== to.meta.requiredRole) {
+      next({ name: 'Dashboard' });
+      return;
+    }
   }
 
   next();

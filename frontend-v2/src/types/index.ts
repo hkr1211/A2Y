@@ -28,13 +28,11 @@ export type QuotationStatus = 'active' | 'withdrawn';
 export interface User {
   id: string;
   username: string;
-  display_name: string;
   role: UserRole;
   company: Company;
   language: Language;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // Inquiry

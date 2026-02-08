@@ -1,10 +1,18 @@
 import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
+import pg from 'pg';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ok } from './shared/response.js';
+import { UserRepository } from './repositories/UserRepository.js';
+import { AuthService } from './services/AuthService.js';
+import { UserService } from './services/UserService.js';
+import { AuthController } from './controllers/AuthController.js';
+import { UserController } from './controllers/UserController.js';
+import { createAuthRoutes } from './routes/auth.js';
+import { createUserRoutes } from './routes/user.js';
 
-export function createApp(): express.Express {
+export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
 
   // Built-in middleware
@@ -22,10 +30,17 @@ export function createApp(): express.Express {
     res.json(ok({ message: 'A2Y Trade System API v2.0' }));
   });
 
-  // Routes will be registered here in later phases
-  // app.use('/api/auth', authRoutes);
-  // app.use('/api/users', userRoutes);
-  // etc.
+  // Wire up business routes when pool is available
+  if (pool) {
+    const userRepo = new UserRepository(pool);
+    const authService = new AuthService(userRepo);
+    const userService = new UserService(userRepo);
+    const authController = new AuthController(authService);
+    const userController = new UserController(userService);
+
+    app.use('/api/auth', createAuthRoutes(authController));
+    app.use('/api/users', createUserRoutes(userController));
+  }
 
   // 404 handler for API routes
   app.use('/api', (_req, res) => {

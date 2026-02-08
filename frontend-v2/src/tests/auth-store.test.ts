@@ -6,13 +6,10 @@ import type { User } from '@/types';
 const mockUser: User = {
   id: 'test-id',
   username: 'testuser',
-  display_name: 'Test User',
   role: 'admin',
   company: 'admin',
   language: 'zh',
-  is_active: true,
-  created_at: '2026-01-01T00:00:00.000Z',
-  updated_at: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 describe('auth store', () => {
@@ -55,10 +52,10 @@ describe('auth store', () => {
     const store = useAuthStore();
     store.setAuth('test-token', mockUser);
 
-    const updated = { ...mockUser, display_name: 'Updated Name' };
+    const updated = { ...mockUser, language: 'ja' as const };
     store.updateUser(updated);
 
-    expect(store.user?.display_name).toBe('Updated Name');
+    expect(store.user?.language).toBe('ja');
   });
 
   it('userLanguage defaults to zh when no user', () => {
