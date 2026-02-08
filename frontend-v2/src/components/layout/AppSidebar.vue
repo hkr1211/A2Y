@@ -9,6 +9,10 @@
         <span>{{ $t('menu.dashboard') }}</span>
       </el-menu-item>
 
+      <el-menu-item index="/inquiries">
+        <span>{{ $t('menu.inquiries') }}</span>
+      </el-menu-item>
+
       <el-menu-item
         v-if="authStore.userRole === 'admin'"
         index="/users"

@@ -11,6 +11,10 @@ import { AuthController } from './controllers/AuthController.js';
 import { UserController } from './controllers/UserController.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { createUserRoutes } from './routes/user.js';
+import { InquiryRepository } from './repositories/InquiryRepository.js';
+import { InquiryService } from './services/InquiryService.js';
+import { InquiryController } from './controllers/InquiryController.js';
+import { createInquiryRoutes } from './routes/inquiry.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -38,8 +42,13 @@ export function createApp(pool?: pg.Pool): express.Express {
     const authController = new AuthController(authService);
     const userController = new UserController(userService);
 
+    const inquiryRepo = new InquiryRepository(pool);
+    const inquiryService = new InquiryService(inquiryRepo);
+    const inquiryController = new InquiryController(inquiryService);
+
     app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/users', createUserRoutes(userController));
+    app.use('/api/inquiries', createInquiryRoutes(inquiryController));
   }
 
   // 404 handler for API routes

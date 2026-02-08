@@ -64,6 +64,62 @@ export const paginationSchema = {
   }),
 };
 
+// Common UUID param schema
+export const uuidParamSchema = {
+  params: Joi.object({
+    id: Joi.string().uuid().required(),
+  }),
+};
+
+// Inquiry schemas
+export const createInquirySchema = {
+  body: Joi.object({
+    productName: Joi.string().trim().max(200).required(),
+    materialType: Joi.string().trim().max(100).required(),
+    specifications: Joi.string().trim().required(),
+    specialRequirements: Joi.string().trim().allow('', null).optional(),
+    quantity: Joi.number().integer().min(1).required(),
+  }),
+};
+
+export const updateInquirySchema = {
+  body: Joi.object({
+    productName: Joi.string().trim().max(200),
+    materialType: Joi.string().trim().max(100),
+    specifications: Joi.string().trim(),
+    specialRequirements: Joi.string().trim().allow('', null),
+    quantity: Joi.number().integer().min(1),
+  }).min(1),
+  params: Joi.object({
+    id: Joi.string().uuid().required(),
+  }),
+};
+
+export const inquiryActionSchema = {
+  body: Joi.object({
+    action: Joi.string().valid('publish', 'cancel').required(),
+  }),
+  params: Joi.object({
+    id: Joi.string().uuid().required(),
+  }),
+};
+
+export const inquiryListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    search: Joi.string().trim().allow('').default(''),
+    sort: Joi.string()
+      .valid('created_at', 'inquiry_number')
+      .default('created_at'),
+    order: Joi.string().valid('asc', 'desc').default('desc'),
+    status: Joi.string()
+      .valid('draft', 'published', 'quoted', 'converted', 'cancelled')
+      .optional(),
+    format: Joi.string().valid('excel').optional(),
+  }),
+};
+
 export const userListSchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1),

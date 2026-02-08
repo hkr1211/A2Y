@@ -38,14 +38,18 @@ export interface User {
 // Inquiry
 export interface Inquiry {
   id: string;
-  inquiry_no: string;
-  title: string;
-  description: string;
+  inquiryNumber: string;
+  productName: string;
+  materialType: string;
+  specifications: string;
+  specialRequirements: string | null;
+  quantity: number;
   status: InquiryStatus;
-  created_by: string;
-  creator_name?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: { id: string; username: string } | string;
+  attachments?: FileAttachment[];
+  quotations?: Quotation[];
 }
 
 // Quotation
