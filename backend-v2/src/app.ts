@@ -19,6 +19,10 @@ import { QuotationRepository } from './repositories/QuotationRepository.js';
 import { QuotationService } from './services/QuotationService.js';
 import { QuotationController } from './controllers/QuotationController.js';
 import { createQuotationRoutes } from './routes/quotation.js';
+import { OrderRepository } from './repositories/OrderRepository.js';
+import { OrderService } from './services/OrderService.js';
+import { OrderController } from './controllers/OrderController.js';
+import { createOrderRoutes } from './routes/order.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -53,10 +57,19 @@ export function createApp(pool?: pg.Pool): express.Express {
     const quotationService = new QuotationService(quotationRepo, inquiryRepo);
     const quotationController = new QuotationController(quotationService);
 
+    const orderRepo = new OrderRepository(pool);
+    const orderService = new OrderService(
+      orderRepo,
+      inquiryRepo,
+      quotationRepo
+    );
+    const orderController = new OrderController(orderService);
+
     app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/users', createUserRoutes(userController));
     app.use('/api/inquiries', createInquiryRoutes(inquiryController));
     app.use('/api/quotations', createQuotationRoutes(quotationController));
+    app.use('/api/orders', createOrderRoutes(orderController));
   }
 
   // 404 handler for API routes

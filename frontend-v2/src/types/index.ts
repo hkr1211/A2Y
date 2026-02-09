@@ -69,21 +69,23 @@ export interface Quotation {
 // Order
 export interface Order {
   id: string;
-  order_no: string;
-  inquiry_id: string;
-  inquiry_no?: string;
-  quotation_id: string;
+  orderNumber: string;
+  inquiryId: string | null;
+  productName: string;
+  materialType: string;
+  specifications: string;
+  specialRequirements: string | null;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
   status: OrderStatus;
-  total_price: number;
-  currency: string;
-  delivery_date: string;
-  shipping_address: string;
-  remarks: string;
-  rejection_reason?: string;
-  created_by: string;
-  creator_name?: string;
-  created_at: string;
-  updated_at: string;
+  createdBy: { id: string; username: string } | string;
+  confirmedBy: { id: string; username: string } | null;
+  rejectReason: string | null;
+  relatedInquiry?: { id: string; inquiryNumber: string } | null;
+  attachments?: FileAttachment[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // File attachment

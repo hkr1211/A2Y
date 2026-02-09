@@ -13,6 +13,10 @@
         <span>{{ $t('menu.inquiries') }}</span>
       </el-menu-item>
 
+      <el-menu-item index="/orders">
+        <span>{{ $t('menu.orders') }}</span>
+      </el-menu-item>
+
       <el-menu-item
         v-if="authStore.userRole === 'admin'"
         index="/users"

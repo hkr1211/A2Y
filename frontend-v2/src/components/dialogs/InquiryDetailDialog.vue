@@ -48,6 +48,20 @@
         </el-descriptions-item>
       </el-descriptions>
 
+      <!-- Convert to Order button for buyer when inquiry is quoted -->
+      <div v-if="canConvertToOrder" class="section-header">
+        <el-popconfirm
+          :title="$t('order.confirmConvert')"
+          @confirm="handleConvertToOrder"
+        >
+          <template #reference>
+            <el-button type="success">
+              {{ $t('order.convertToOrder') }}
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </div>
+
       <!-- Quotation history section -->
       <div class="section-header">
         <h4>{{ $t('quotation.title') }}</h4>
@@ -147,6 +161,7 @@ import { ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getInquiry } from '@/services/inquiry';
 import { withdrawQuotations } from '@/services/quotation';
+import { createOrderFromInquiry } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
 import { INQUIRY_STATUS_TYPES } from '@/utils/constants';
 import QuotationFormDialog from './QuotationFormDialog.vue';
@@ -169,6 +184,7 @@ const quotationDialogVisible = ref(false);
 
 const canQuote = ref(false);
 const canWithdraw = ref(false);
+const canConvertToOrder = ref(false);
 
 watch(
   () => props.visible,
@@ -209,6 +225,10 @@ function updatePermissions() {
   canQuote.value =
     isSupplier && ['published', 'quoted'].includes(status);
 
+  // Buyer can convert quoted inquiry to order
+  const isBuyer = authStore.user.role === 'buyer';
+  canConvertToOrder.value = isBuyer && status === 'quoted';
+
   // Supplier can withdraw if they have active quotations
   const hasOwnActive =
     detail.value.quotations?.some(
@@ -248,6 +268,18 @@ function formatDate(dateStr: string) {
 
 function showQuotationForm() {
   quotationDialogVisible.value = true;
+}
+
+async function handleConvertToOrder() {
+  if (!detail.value) return;
+  try {
+    await createOrderFromInquiry({ inquiryId: detail.value.id });
+    ElMessage.success('订单创建成功');
+    await loadDetail();
+    emit('updated');
+  } catch (err) {
+    ElMessage.error(err instanceof Error ? err.message : '创建订单失败');
+  }
 }
 
 async function handleWithdraw() {

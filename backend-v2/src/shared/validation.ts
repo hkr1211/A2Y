@@ -148,3 +148,86 @@ export const withdrawQuotationSchema = {
     inquiryId: Joi.string().uuid().required(),
   }),
 };
+
+// Order schemas
+export const createOrderSchema = {
+  body: Joi.object({
+    // From inquiry
+    inquiryId: Joi.string().uuid().optional(),
+    // Standalone fields
+    productName: Joi.string().trim().max(200).when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+    materialType: Joi.string().trim().max(100).when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+    specifications: Joi.string().trim().when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+    specialRequirements: Joi.string().trim().allow('', null).optional(),
+    unitPrice: Joi.number().min(0).when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+    quantity: Joi.number().integer().min(1).when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+    totalPrice: Joi.number().min(0).when('inquiryId', {
+      is: Joi.exist(),
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
+  }),
+};
+
+export const orderActionSchema = {
+  body: Joi.object({
+    action: Joi.string()
+      .valid(
+        'cancel',
+        'reject',
+        'confirm',
+        'start_production',
+        'ship',
+        'complete'
+      )
+      .required(),
+    reason: Joi.string().trim().allow('').optional(),
+  }),
+  params: Joi.object({
+    id: Joi.string().uuid().required(),
+  }),
+};
+
+export const orderListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    search: Joi.string().trim().allow('').default(''),
+    sort: Joi.string()
+      .valid('created_at', 'order_number')
+      .default('created_at'),
+    order: Joi.string().valid('asc', 'desc').default('desc'),
+    status: Joi.string()
+      .valid(
+        'pending',
+        'confirmed',
+        'rejected',
+        'production',
+        'shipped',
+        'completed',
+        'cancelled'
+      )
+      .optional(),
+    format: Joi.string().valid('excel').optional(),
+  }),
+};

@@ -27,6 +27,12 @@ const router = createRouter({
           meta: { title: 'menu.inquiries' },
         },
         {
+          path: 'orders',
+          name: 'Orders',
+          component: () => import('@/views/OrderListView.vue'),
+          meta: { title: 'menu.orders' },
+        },
+        {
           path: 'users',
           name: 'Users',
           component: () => import('@/views/UserListView.vue'),
