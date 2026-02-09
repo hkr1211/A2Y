@@ -137,6 +137,18 @@ export default {
     markAllRead: '全て既読',
     noNotification: 'お知らせなし',
   },
+  file: {
+    title: '添付ファイル',
+    upload: 'ファイルアップロード',
+    download: 'ダウンロード',
+    fileName: 'ファイル名',
+    fileSize: 'サイズ',
+    uploader: 'アップロード者',
+    noFiles: '添付ファイルなし',
+    confirmDelete: 'この添付ファイルを削除しますか？',
+    unsupportedType: 'このファイル形式はサポートされていません',
+    fileTooLarge: 'ファイルサイズは20MBを超えることはできません',
+  },
   chat: {
     title: 'メッセージ',
     send: '送信',

@@ -140,6 +140,15 @@
         :description="$t('quotation.noQuotations')"
         :image-size="60"
       />
+
+      <!-- File attachments section -->
+      <FileUploadPanel
+        :files="detail.attachments || []"
+        :related-id="detail.id"
+        related-type="inquiry"
+        :can-upload="!['converted', 'cancelled'].includes(detail.status)"
+        @uploaded="loadDetail"
+      />
     </div>
     <div v-else v-loading="detailLoading" style="min-height: 200px" />
 
@@ -165,6 +174,7 @@ import { createOrderFromInquiry } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
 import { INQUIRY_STATUS_TYPES } from '@/utils/constants';
 import QuotationFormDialog from './QuotationFormDialog.vue';
+import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
 import type { Inquiry, InquiryStatus } from '@/types';
 
 const props = defineProps<{

@@ -7,6 +7,10 @@ import {
   QuotationRepository,
   QuotationWithCreator,
 } from '../repositories/QuotationRepository.js';
+import {
+  FileAttachmentRepository,
+  FileAttachmentWithUploader,
+} from '../repositories/FileAttachmentRepository.js';
 import { AppError } from '../shared/errors.js';
 import { JwtPayload } from '../shared/types.js';
 import { logger } from '../utils/logger.js';
@@ -36,6 +40,20 @@ function toInquiryListResponse(row: InquiryListRow) {
   };
 }
 
+function toAttachmentResponse(row: FileAttachmentWithUploader) {
+  return {
+    id: row.id,
+    originalName: row.original_name,
+    mimeType: row.mime_type,
+    size: row.size,
+    uploadedBy: {
+      id: row.uploaded_by,
+      username: row.uploader_username,
+    },
+    createdAt: row.created_at,
+  };
+}
+
 function toQuotationResponse(row: QuotationWithCreator) {
   return {
     id: row.id,
@@ -56,7 +74,8 @@ function toQuotationResponse(row: QuotationWithCreator) {
 export class InquiryService {
   constructor(
     private inquiryRepo: InquiryRepository,
-    private quotationRepo?: QuotationRepository
+    private quotationRepo?: QuotationRepository,
+    private fileRepo?: FileAttachmentRepository
   ) {}
 
   async list(params: {
@@ -84,10 +103,16 @@ export class InquiryService {
       quotations = await this.quotationRepo.findByInquiryId(id);
     }
 
+    // Fetch attachments if repo is available
+    let attachments: FileAttachmentWithUploader[] = [];
+    if (this.fileRepo) {
+      attachments = await this.fileRepo.findByRelated('inquiry', id);
+    }
+
     return {
       ...toInquiryResponse(inquiry),
       createdBy: inquiry.created_by,
-      attachments: [],
+      attachments: attachments.map(toAttachmentResponse),
       quotations: quotations.map(toQuotationResponse),
     };
   }

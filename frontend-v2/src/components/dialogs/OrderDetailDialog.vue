@@ -74,6 +74,15 @@
         </el-descriptions-item>
       </el-descriptions>
 
+      <!-- File attachments section -->
+      <FileUploadPanel
+        :files="detail.attachments || []"
+        :related-id="detail.id"
+        related-type="order"
+        :can-upload="!['completed', 'cancelled', 'rejected'].includes(detail.status)"
+        @uploaded="loadDetail"
+      />
+
       <!-- Action buttons -->
       <div v-if="actionButtons.length > 0" class="action-bar">
         <template v-for="btn in actionButtons" :key="btn.action">
@@ -115,6 +124,7 @@ import { ref, watch, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { getOrder, performOrderAction } from '@/services/order';
+import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
 import type { OrderAction } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
 import { ORDER_STATUS_TYPES } from '@/utils/constants';

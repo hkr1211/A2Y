@@ -23,6 +23,10 @@ import { OrderRepository } from './repositories/OrderRepository.js';
 import { OrderService } from './services/OrderService.js';
 import { OrderController } from './controllers/OrderController.js';
 import { createOrderRoutes } from './routes/order.js';
+import { FileAttachmentRepository } from './repositories/FileAttachmentRepository.js';
+import { FileService } from './services/FileService.js';
+import { FileController } from './controllers/FileController.js';
+import { createFileRoutes } from './routes/file.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -52,7 +56,9 @@ export function createApp(pool?: pg.Pool): express.Express {
 
     const inquiryRepo = new InquiryRepository(pool);
     const quotationRepo = new QuotationRepository(pool);
-    const inquiryService = new InquiryService(inquiryRepo, quotationRepo);
+    const fileRepo = new FileAttachmentRepository(pool);
+
+    const inquiryService = new InquiryService(inquiryRepo, quotationRepo, fileRepo);
     const inquiryController = new InquiryController(inquiryService);
     const quotationService = new QuotationService(quotationRepo, inquiryRepo);
     const quotationController = new QuotationController(quotationService);
@@ -61,15 +67,23 @@ export function createApp(pool?: pg.Pool): express.Express {
     const orderService = new OrderService(
       orderRepo,
       inquiryRepo,
-      quotationRepo
+      quotationRepo,
+      fileRepo
     );
     const orderController = new OrderController(orderService);
+
+    const fileService = new FileService(fileRepo);
+    const fileController = new FileController(fileService);
 
     app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/users', createUserRoutes(userController));
     app.use('/api/inquiries', createInquiryRoutes(inquiryController));
     app.use('/api/quotations', createQuotationRoutes(quotationController));
     app.use('/api/orders', createOrderRoutes(orderController));
+    app.use('/api/files', createFileRoutes(fileController));
+
+    // Serve uploaded files (local dev only, use OSS in production)
+    app.use('/uploads', express.static('uploads'));
   }
 
   // 404 handler for API routes

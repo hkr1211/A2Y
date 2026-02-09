@@ -208,6 +208,14 @@ export const orderActionSchema = {
   }),
 };
 
+// File schemas
+export const uploadFileSchema = {
+  body: Joi.object({
+    relatedId: Joi.string().uuid().required(),
+    relatedType: Joi.string().valid('inquiry', 'order').required(),
+  }),
+};
+
 export const orderListSchema = {
   query: Joi.object({
     page: Joi.number().integer().min(1).default(1),

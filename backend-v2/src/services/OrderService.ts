@@ -5,6 +5,10 @@ import {
 } from '../repositories/OrderRepository.js';
 import { InquiryRepository } from '../repositories/InquiryRepository.js';
 import { QuotationRepository } from '../repositories/QuotationRepository.js';
+import {
+  FileAttachmentRepository,
+  FileAttachmentWithUploader,
+} from '../repositories/FileAttachmentRepository.js';
 import { AppError } from '../shared/errors.js';
 import { JwtPayload } from '../shared/types.js';
 import { logger } from '../utils/logger.js';
@@ -30,6 +34,20 @@ function toOrderResponse(row: OrderRow) {
   };
 }
 
+function toAttachmentResponse(row: FileAttachmentWithUploader) {
+  return {
+    id: row.id,
+    originalName: row.original_name,
+    mimeType: row.mime_type,
+    size: row.size,
+    uploadedBy: {
+      id: row.uploaded_by,
+      username: row.uploader_username,
+    },
+    createdAt: row.created_at,
+  };
+}
+
 function toOrderListResponse(row: OrderListRow) {
   return {
     ...toOrderResponse(row),
@@ -50,7 +68,8 @@ export class OrderService {
   constructor(
     private orderRepo: OrderRepository,
     private inquiryRepo: InquiryRepository,
-    private quotationRepo: QuotationRepository
+    private quotationRepo: QuotationRepository,
+    private fileRepo?: FileAttachmentRepository
   ) {}
 
   async list(params: {
@@ -86,10 +105,16 @@ export class OrderService {
       }
     }
 
+    // Fetch attachments if repo is available
+    let attachments: FileAttachmentWithUploader[] = [];
+    if (this.fileRepo) {
+      attachments = await this.fileRepo.findByRelated('order', id);
+    }
+
     return {
       ...response,
       relatedInquiry,
-      attachments: [],
+      attachments: attachments.map(toAttachmentResponse),
     };
   }
 

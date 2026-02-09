@@ -137,6 +137,18 @@ export default {
     markAllRead: '全部已读',
     noNotification: '暂无通知',
   },
+  file: {
+    title: '附件',
+    upload: '上传文件',
+    download: '下载',
+    fileName: '文件名',
+    fileSize: '大小',
+    uploader: '上传者',
+    noFiles: '暂无附件',
+    confirmDelete: '确认删除此附件？',
+    unsupportedType: '暂不支持该文件格式',
+    fileTooLarge: '文件大小不能超过 20MB',
+  },
   chat: {
     title: '消息',
     send: '发送',
