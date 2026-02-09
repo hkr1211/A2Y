@@ -146,6 +146,7 @@
     <InquiryDetailDialog
       v-model:visible="detailVisible"
       :inquiry="viewingInquiry"
+      @updated="loadInquiries"
     />
   </div>
 </template>

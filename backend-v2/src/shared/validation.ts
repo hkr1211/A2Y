@@ -131,3 +131,20 @@ export const userListSchema = {
     format: Joi.string().valid('excel').optional(),
   }),
 };
+
+// Quotation schemas
+export const createQuotationSchema = {
+  body: Joi.object({
+    inquiryId: Joi.string().uuid().required(),
+    unitPrice: Joi.number().min(0).required(),
+    totalPrice: Joi.number().min(0).required(),
+    deliveryDays: Joi.number().integer().min(1).required(),
+    remarks: Joi.string().trim().allow('', null).optional(),
+  }),
+};
+
+export const withdrawQuotationSchema = {
+  params: Joi.object({
+    inquiryId: Joi.string().uuid().required(),
+  }),
+};

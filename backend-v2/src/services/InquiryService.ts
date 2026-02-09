@@ -3,6 +3,10 @@ import {
   InquiryRow,
   InquiryListRow,
 } from '../repositories/InquiryRepository.js';
+import {
+  QuotationRepository,
+  QuotationWithCreator,
+} from '../repositories/QuotationRepository.js';
 import { AppError } from '../shared/errors.js';
 import { JwtPayload } from '../shared/types.js';
 import { logger } from '../utils/logger.js';
@@ -32,8 +36,28 @@ function toInquiryListResponse(row: InquiryListRow) {
   };
 }
 
+function toQuotationResponse(row: QuotationWithCreator) {
+  return {
+    id: row.id,
+    version: row.version,
+    unitPrice: parseFloat(row.unit_price),
+    totalPrice: parseFloat(row.total_price),
+    deliveryDays: row.delivery_days,
+    remarks: row.remarks,
+    isWithdrawn: row.is_withdrawn,
+    createdBy: {
+      id: row.created_by,
+      username: row.creator_username,
+    },
+    createdAt: row.created_at,
+  };
+}
+
 export class InquiryService {
-  constructor(private inquiryRepo: InquiryRepository) {}
+  constructor(
+    private inquiryRepo: InquiryRepository,
+    private quotationRepo?: QuotationRepository
+  ) {}
 
   async list(params: {
     page: number;
@@ -54,12 +78,17 @@ export class InquiryService {
     const inquiry = await this.inquiryRepo.findById(id);
     if (!inquiry) throw AppError.notFound('询单不存在');
 
-    // For now return basic info; attachments and quotations will be added in later phases
+    // Fetch quotations if repo is available
+    let quotations: QuotationWithCreator[] = [];
+    if (this.quotationRepo) {
+      quotations = await this.quotationRepo.findByInquiryId(id);
+    }
+
     return {
       ...toInquiryResponse(inquiry),
       createdBy: inquiry.created_by,
       attachments: [],
-      quotations: [],
+      quotations: quotations.map(toQuotationResponse),
     };
   }
 
@@ -116,6 +145,15 @@ export class InquiryService {
       throw AppError.business('询单当前状态不允许修改');
     }
 
+    // If published, check if there are active quotations
+    if (inquiry.status === 'published' && this.quotationRepo) {
+      const hasQuotations =
+        await this.quotationRepo.hasActiveQuotations(id);
+      if (hasQuotations) {
+        throw AppError.business('已有报价的询单不允许修改');
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
     if (data.productName !== undefined)
       updateData.product_name = data.productName;
@@ -164,7 +202,14 @@ export class InquiryService {
         if (inquiry.status !== 'published') {
           throw AppError.business('只有已发布状态的询单可以作废');
         }
-        // In later phases, check if quotations exist
+        // Check if there are active quotations
+        if (this.quotationRepo) {
+          const hasQuotations =
+            await this.quotationRepo.hasActiveQuotations(id);
+          if (hasQuotations) {
+            throw AppError.business('已有报价的询单不能作废');
+          }
+        }
         newStatus = 'cancelled';
         break;
 

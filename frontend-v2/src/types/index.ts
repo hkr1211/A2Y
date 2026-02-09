@@ -21,7 +21,7 @@ export type OrderStatus =
   | 'rejected'
   | 'cancelled';
 
-// Quotation status
+// Quotation withdrawn flag (not a status enum in the backend)
 export type QuotationStatus = 'active' | 'withdrawn';
 
 // User
@@ -55,19 +55,15 @@ export interface Inquiry {
 // Quotation
 export interface Quotation {
   id: string;
-  inquiry_id: string;
+  inquiryId?: string;
   version: number;
-  unit_price: number;
-  quantity: number;
-  total_price: number;
-  currency: string;
-  delivery_date: string;
-  payment_terms: string;
-  remarks: string;
-  status: QuotationStatus;
-  created_by: string;
-  creator_name?: string;
-  created_at: string;
+  unitPrice: number;
+  totalPrice: number;
+  deliveryDays: number;
+  remarks: string | null;
+  isWithdrawn: boolean;
+  createdBy: { id: string; username: string } | string;
+  createdAt: string;
 }
 
 // Order

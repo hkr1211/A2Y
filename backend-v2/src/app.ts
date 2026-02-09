@@ -15,6 +15,10 @@ import { InquiryRepository } from './repositories/InquiryRepository.js';
 import { InquiryService } from './services/InquiryService.js';
 import { InquiryController } from './controllers/InquiryController.js';
 import { createInquiryRoutes } from './routes/inquiry.js';
+import { QuotationRepository } from './repositories/QuotationRepository.js';
+import { QuotationService } from './services/QuotationService.js';
+import { QuotationController } from './controllers/QuotationController.js';
+import { createQuotationRoutes } from './routes/quotation.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -43,12 +47,16 @@ export function createApp(pool?: pg.Pool): express.Express {
     const userController = new UserController(userService);
 
     const inquiryRepo = new InquiryRepository(pool);
-    const inquiryService = new InquiryService(inquiryRepo);
+    const quotationRepo = new QuotationRepository(pool);
+    const inquiryService = new InquiryService(inquiryRepo, quotationRepo);
     const inquiryController = new InquiryController(inquiryService);
+    const quotationService = new QuotationService(quotationRepo, inquiryRepo);
+    const quotationController = new QuotationController(quotationService);
 
     app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/users', createUserRoutes(userController));
     app.use('/api/inquiries', createInquiryRoutes(inquiryController));
+    app.use('/api/quotations', createQuotationRoutes(quotationController));
   }
 
   // 404 handler for API routes
