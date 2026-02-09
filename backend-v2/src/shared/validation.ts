@@ -239,3 +239,45 @@ export const orderListSchema = {
     format: Joi.string().valid('excel').optional(),
   }),
 };
+
+// Chat schemas
+const relatedParams = Joi.object({
+  relatedType: Joi.string().valid('inquiry', 'order').required(),
+  relatedId: Joi.string().uuid().required(),
+});
+
+export const chatMessagesSchema = {
+  params: relatedParams,
+  query: Joi.object({
+    since: Joi.string().isoDate().optional(),
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(50),
+  }),
+};
+
+export const sendMessageSchema = {
+  params: relatedParams,
+  body: Joi.object({
+    content: Joi.string().trim().min(1).max(2000).required(),
+  }),
+};
+
+export const chatParamsSchema = {
+  params: relatedParams,
+};
+
+// Notification schemas
+export const notificationListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    isRead: Joi.string().valid('true', 'false').optional(),
+  }),
+};
+
+export const markNotificationReadSchema = {
+  body: Joi.object({
+    id: Joi.string().uuid().optional(),
+    all: Joi.boolean().optional(),
+  }).or('id', 'all'),
+};

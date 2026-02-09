@@ -27,6 +27,14 @@ import { FileAttachmentRepository } from './repositories/FileAttachmentRepositor
 import { FileService } from './services/FileService.js';
 import { FileController } from './controllers/FileController.js';
 import { createFileRoutes } from './routes/file.js';
+import { ChatMessageRepository } from './repositories/ChatMessageRepository.js';
+import { ChatService } from './services/ChatService.js';
+import { ChatController } from './controllers/ChatController.js';
+import { createChatRoutes } from './routes/chat.js';
+import { NotificationRepository } from './repositories/NotificationRepository.js';
+import { NotificationService } from './services/NotificationService.js';
+import { NotificationController } from './controllers/NotificationController.js';
+import { createNotificationRoutes } from './routes/notification.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -75,12 +83,21 @@ export function createApp(pool?: pg.Pool): express.Express {
     const fileService = new FileService(fileRepo);
     const fileController = new FileController(fileService);
 
+    const chatRepo = new ChatMessageRepository(pool);
+    const notificationRepo = new NotificationRepository(pool);
+    const notificationService = new NotificationService(notificationRepo);
+    const chatService = new ChatService(chatRepo, notificationService);
+    const chatController = new ChatController(chatService);
+    const notificationController = new NotificationController(notificationService);
+
     app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/users', createUserRoutes(userController));
     app.use('/api/inquiries', createInquiryRoutes(inquiryController));
     app.use('/api/quotations', createQuotationRoutes(quotationController));
     app.use('/api/orders', createOrderRoutes(orderController));
     app.use('/api/files', createFileRoutes(fileController));
+    app.use('/api/chat', createChatRoutes(chatController));
+    app.use('/api/notifications', createNotificationRoutes(notificationController));
 
     // Serve uploaded files (local dev only, use OSS in production)
     app.use('/uploads', express.static('uploads'));

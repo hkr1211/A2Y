@@ -83,6 +83,13 @@
         @uploaded="loadDetail"
       />
 
+      <!-- Chat section -->
+      <ChatPanel
+        related-type="order"
+        :related-id="detail.id"
+        :active="visible"
+      />
+
       <!-- Action buttons -->
       <div v-if="actionButtons.length > 0" class="action-bar">
         <template v-for="btn in actionButtons" :key="btn.action">
@@ -125,6 +132,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { getOrder, performOrderAction } from '@/services/order';
 import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
+import ChatPanel from '@/components/common/ChatPanel.vue';
 import type { OrderAction } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
 import { ORDER_STATUS_TYPES } from '@/utils/constants';

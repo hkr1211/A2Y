@@ -149,6 +149,13 @@
         :can-upload="!['converted', 'cancelled'].includes(detail.status)"
         @uploaded="loadDetail"
       />
+
+      <!-- Chat section -->
+      <ChatPanel
+        related-type="inquiry"
+        :related-id="detail.id"
+        :active="visible"
+      />
     </div>
     <div v-else v-loading="detailLoading" style="min-height: 200px" />
 
@@ -175,6 +182,7 @@ import { useAuthStore } from '@/stores/auth';
 import { INQUIRY_STATUS_TYPES } from '@/utils/constants';
 import QuotationFormDialog from './QuotationFormDialog.vue';
 import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
+import ChatPanel from '@/components/common/ChatPanel.vue';
 import type { Inquiry, InquiryStatus } from '@/types';
 
 const props = defineProps<{
