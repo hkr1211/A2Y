@@ -39,6 +39,18 @@ const router = createRouter({
           meta: { title: 'menu.users', requiredRole: 'admin' },
         },
         {
+          path: 'audit-logs',
+          name: 'AuditLogs',
+          component: () => import('@/views/AuditLogView.vue'),
+          meta: { title: 'menu.audit', requiredRole: 'admin' },
+        },
+        {
+          path: 'trash',
+          name: 'Trash',
+          component: () => import('@/views/TrashView.vue'),
+          meta: { title: 'menu.trash', requiredRole: 'admin' },
+        },
+        {
           path: 'change-password',
           name: 'ChangePassword',
           component: () => import('@/views/ChangePasswordView.vue'),

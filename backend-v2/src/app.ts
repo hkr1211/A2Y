@@ -35,6 +35,13 @@ import { NotificationRepository } from './repositories/NotificationRepository.js
 import { NotificationService } from './services/NotificationService.js';
 import { NotificationController } from './controllers/NotificationController.js';
 import { createNotificationRoutes } from './routes/notification.js';
+import { AuditLogRepository } from './repositories/AuditLogRepository.js';
+import { AuditLogService } from './services/AuditLogService.js';
+import { AuditLogController } from './controllers/AuditLogController.js';
+import { createAuditLogRoutes } from './routes/auditLog.js';
+import { TrashService } from './services/TrashService.js';
+import { TrashController } from './controllers/TrashController.js';
+import { createTrashRoutes } from './routes/trash.js';
 
 export function createApp(pool?: pg.Pool): express.Express {
   const app = express();
@@ -96,8 +103,17 @@ export function createApp(pool?: pg.Pool): express.Express {
     app.use('/api/quotations', createQuotationRoutes(quotationController));
     app.use('/api/orders', createOrderRoutes(orderController));
     app.use('/api/files', createFileRoutes(fileController));
+    const auditLogRepo = new AuditLogRepository(pool);
+    const auditLogService = new AuditLogService(auditLogRepo);
+    const auditLogController = new AuditLogController(auditLogService);
+
+    const trashService = new TrashService(pool);
+    const trashController = new TrashController(trashService);
+
     app.use('/api/chat', createChatRoutes(chatController));
     app.use('/api/notifications', createNotificationRoutes(notificationController));
+    app.use('/api/audit-logs', createAuditLogRoutes(auditLogController));
+    app.use('/api/trash', createTrashRoutes(trashController));
 
     // Serve uploaded files (local dev only, use OSS in production)
     app.use('/uploads', express.static('uploads'));

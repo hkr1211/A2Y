@@ -23,6 +23,20 @@
       >
         <span>{{ $t('menu.users') }}</span>
       </el-menu-item>
+
+      <el-menu-item
+        v-if="authStore.userRole === 'admin'"
+        index="/audit-logs"
+      >
+        <span>{{ $t('menu.audit') }}</span>
+      </el-menu-item>
+
+      <el-menu-item
+        v-if="authStore.userRole === 'admin'"
+        index="/trash"
+      >
+        <span>{{ $t('menu.trash') }}</span>
+      </el-menu-item>
     </el-menu>
   </el-aside>
 </template>

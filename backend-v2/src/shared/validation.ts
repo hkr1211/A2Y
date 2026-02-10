@@ -281,3 +281,33 @@ export const markNotificationReadSchema = {
     all: Joi.boolean().optional(),
   }).or('id', 'all'),
 };
+
+// Audit log schemas
+export const auditLogListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    userId: Joi.string().uuid().optional(),
+    action: Joi.string().trim().optional(),
+    targetType: Joi.string().trim().optional(),
+    startDate: Joi.string().isoDate().optional(),
+    endDate: Joi.string().isoDate().optional(),
+    format: Joi.string().valid('excel').optional(),
+  }),
+};
+
+// Trash schemas
+export const trashListSchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+    type: Joi.string().valid('inquiry', 'order', 'user').optional(),
+  }),
+};
+
+export const trashItemSchema = {
+  params: Joi.object({
+    type: Joi.string().valid('inquiry', 'order', 'user').required(),
+    id: Joi.string().uuid().required(),
+  }),
+};
