@@ -76,6 +76,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { usePagination } from '@/composables/usePagination';
 import {
@@ -83,7 +84,10 @@ import {
   restoreTrashItem,
   permanentDeleteTrashItem,
 } from '@/services/trash';
+import { formatDateTime } from '@/utils/date';
 import type { TrashItem } from '@/services/trash';
+
+const { t } = useI18n();
 
 const { loading, pagination, handlePageChange } = usePagination();
 
@@ -101,7 +105,7 @@ async function loadTrash() {
     items.value = data.items;
     pagination.total = data.total;
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -110,25 +114,25 @@ async function loadTrash() {
 async function handleRestore(item: TrashItem) {
   try {
     await restoreTrashItem(item.type, item.id);
-    ElMessage.success('数据已恢复');
+    ElMessage.success(t('trash.restoreSuccess'));
     loadTrash();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '恢复失败');
+    ElMessage.error(err instanceof Error ? err.message : t('trash.restoreFailed'));
   }
 }
 
 async function handlePermanentDelete(item: TrashItem) {
   try {
     await permanentDeleteTrashItem(item.type, item.id);
-    ElMessage.success('已永久删除');
+    ElMessage.success(t('trash.deleteSuccess'));
     loadTrash();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '删除失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.deleteFailed'));
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 watch(() => pagination.page, () => loadTrash());

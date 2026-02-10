@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import {
   getChatMessages,
@@ -51,6 +52,9 @@ import {
 } from '@/services/chat';
 import type { ChatMessage } from '@/services/chat';
 import { useAuthStore } from '@/stores/auth';
+import { formatTime as formatTimeUtil } from '@/utils/date';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   relatedType: 'inquiry' | 'order';
@@ -124,7 +128,7 @@ async function loadMessages() {
     }
     scrollToBottom();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载消息失败');
+    ElMessage.error(err instanceof Error ? err.message : t('chat.loadFailed'));
   }
 }
 
@@ -152,7 +156,7 @@ async function handleSend() {
     inputContent.value = '';
     scrollToBottom();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '发送失败');
+    ElMessage.error(err instanceof Error ? err.message : t('chat.sendFailed'));
   } finally {
     sending.value = false;
   }
@@ -167,20 +171,7 @@ function scrollToBottom() {
 }
 
 function formatTime(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  if (date.toDateString() === now.toDateString()) {
-    return date.toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-  return date.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatTimeUtil(dateStr);
 }
 </script>
 

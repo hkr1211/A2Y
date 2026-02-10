@@ -20,24 +20,24 @@
 
       <el-form-item :label="$t('user.role')" prop="role">
         <el-select v-model="form.role" style="width: 100%">
-          <el-option value="admin" label="Admin" />
-          <el-option value="buyer" label="Buyer" />
-          <el-option value="supplier" label="Supplier" />
+          <el-option value="admin" :label="$t('user.roleAdmin')" />
+          <el-option value="buyer" :label="$t('user.roleBuyer')" />
+          <el-option value="supplier" :label="$t('user.roleSupplier')" />
         </el-select>
       </el-form-item>
 
       <el-form-item :label="$t('user.company')" prop="company">
         <el-select v-model="form.company" style="width: 100%">
-          <el-option value="admin" label="Admin" />
-          <el-option value="arroz" label="Arroz" />
-          <el-option value="yunjie" label="Yunjie" />
+          <el-option value="admin" :label="$t('user.companyAdmin')" />
+          <el-option value="arroz" :label="$t('user.companyArroz')" />
+          <el-option value="yunjie" :label="$t('user.companyYunjie')" />
         </el-select>
       </el-form-item>
 
       <el-form-item :label="$t('user.language')" prop="language">
         <el-select v-model="form.language" style="width: 100%">
-          <el-option value="zh" label="中文" />
-          <el-option value="ja" label="日本語" />
+          <el-option value="zh" :label="$t('user.langZh')" />
+          <el-option value="ja" :label="$t('user.langJa')" />
         </el-select>
       </el-form-item>
     </el-form>
@@ -55,10 +55,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { createUser, updateUser } from '@/services/user';
 import type { User } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   visible: boolean;
@@ -83,10 +86,10 @@ const form = reactive({
 });
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur', min: 6 }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  company: [{ required: true, message: '请选择公司', trigger: 'change' }],
+  username: [{ required: true, message: t('user.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('user.passwordRequired'), trigger: 'blur', min: 6 }],
+  role: [{ required: true, message: t('user.roleRequired'), trigger: 'change' }],
+  company: [{ required: true, message: t('user.companyRequired'), trigger: 'change' }],
 };
 
 watch(
@@ -134,11 +137,11 @@ async function handleSave() {
         language: form.language,
       });
     }
-    ElMessage.success('操作成功');
+    ElMessage.success(t('common.success'));
     emit('update:visible', false);
     emit('saved');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '操作失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.failed'));
   } finally {
     saving.value = false;
   }

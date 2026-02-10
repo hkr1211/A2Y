@@ -153,6 +153,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { usePagination } from '@/composables/usePagination';
 import { useAuthStore } from '@/stores/auth';
@@ -163,7 +164,10 @@ import {
 import InquiryFormDialog from '@/components/dialogs/InquiryFormDialog.vue';
 import InquiryDetailDialog from '@/components/dialogs/InquiryDetailDialog.vue';
 import { INQUIRY_STATUS_TYPES } from '@/utils/constants';
+import { formatDateTime } from '@/utils/date';
 import type { Inquiry, InquiryStatus } from '@/types';
+
+const { t } = useI18n();
 
 const authStore = useAuthStore();
 const { loading, pagination, handlePageChange, handleSizeChange } =
@@ -189,7 +193,7 @@ async function loadInquiries() {
     inquiries.value = data.items;
     pagination.total = data.total;
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -208,7 +212,7 @@ function creatorName(
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 function isCreator(row: Inquiry) {
@@ -251,20 +255,20 @@ function viewDetail(inquiry: Inquiry) {
 async function handlePublish(id: string) {
   try {
     await performInquiryAction(id, 'publish');
-    ElMessage.success('询单已发布');
+    ElMessage.success(t('inquiry.publishSuccess'));
     await loadInquiries();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '发布失败');
+    ElMessage.error(err instanceof Error ? err.message : t('inquiry.publishFailed'));
   }
 }
 
 async function handleCancel(id: string) {
   try {
     await performInquiryAction(id, 'cancel');
-    ElMessage.success('询单已取消');
+    ElMessage.success(t('inquiry.cancelSuccess'));
     await loadInquiries();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '取消失败');
+    ElMessage.error(err instanceof Error ? err.message : t('inquiry.cancelFailed'));
   }
 }
 

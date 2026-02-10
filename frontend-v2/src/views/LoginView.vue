@@ -49,11 +49,13 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
 import { login } from '@/services/auth';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 
+const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -66,8 +68,8 @@ const form = reactive({
 });
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  username: [{ required: true, message: t('auth.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('auth.passwordRequired'), trigger: 'blur' }],
 };
 
 async function handleLogin() {
@@ -80,7 +82,7 @@ async function handleLogin() {
     authStore.setAuth(token, user);
     router.push('/');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '登录失败');
+    ElMessage.error(err instanceof Error ? err.message : t('auth.loginFailed'));
   } finally {
     loading.value = false;
   }

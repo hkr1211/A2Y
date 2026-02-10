@@ -121,6 +121,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { usePagination } from '@/composables/usePagination';
 import { useAuthStore } from '@/stores/auth';
@@ -128,7 +129,10 @@ import { getOrders } from '@/services/order';
 import OrderFormDialog from '@/components/dialogs/OrderFormDialog.vue';
 import OrderDetailDialog from '@/components/dialogs/OrderDetailDialog.vue';
 import { ORDER_STATUS_TYPES } from '@/utils/constants';
+import { formatDateTime } from '@/utils/date';
 import type { Order, OrderStatus } from '@/types';
+
+const { t } = useI18n();
 
 const authStore = useAuthStore();
 const { loading, pagination, handlePageChange, handleSizeChange } =
@@ -153,7 +157,7 @@ async function loadOrders() {
     orders.value = data.items;
     pagination.total = data.total;
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -171,7 +175,7 @@ function personName(
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 function showCreateDialog() {

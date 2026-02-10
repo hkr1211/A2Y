@@ -1,6 +1,16 @@
 import axios from 'axios';
 import type { ApiErrorResponse } from '@/types';
 
+const FALLBACK_MESSAGES: Record<string, { request: string; network: string }> = {
+  zh: { request: '请求失败', network: '网络连接失败' },
+  ja: { request: 'リクエスト失敗', network: 'ネットワーク接続失敗' },
+};
+
+function getFallback(key: 'request' | 'network'): string {
+  const lang = localStorage.getItem('language') || 'zh';
+  return (FALLBACK_MESSAGES[lang] || FALLBACK_MESSAGES.zh)[key];
+}
+
 const api = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -34,12 +44,12 @@ api.interceptors.response.use(
       }
 
       // Return the error message from API
-      const message = data?.error?.message || '请求失败';
+      const message = data?.error?.message || getFallback('request');
       return Promise.reject(new Error(message));
     }
 
     // Network error
-    return Promise.reject(new Error('网络连接失败'));
+    return Promise.reject(new Error(getFallback('network')));
   }
 );
 

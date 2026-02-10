@@ -4,6 +4,7 @@
       <span class="logo">A2Y</span>
     </div>
     <div class="header-right">
+      <LanguageSwitcher />
       <NotificationDropdown />
       <span class="username">{{ authStore.user?.username }}</span>
       <el-dropdown @command="handleCommand">
@@ -30,6 +31,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { ArrowDown } from '@element-plus/icons-vue';
 import NotificationDropdown from './NotificationDropdown.vue';
+import LanguageSwitcher from './LanguageSwitcher.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

@@ -58,9 +58,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { createQuotation } from '@/services/quotation';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   visible: boolean;
@@ -85,13 +88,13 @@ const form = reactive({
 
 const rules: FormRules = {
   unitPrice: [
-    { required: true, message: '请输入单价', trigger: 'blur' },
+    { required: true, message: t('quotation.unitPriceRequired'), trigger: 'blur' },
   ],
   totalPrice: [
-    { required: true, message: '请输入总价', trigger: 'blur' },
+    { required: true, message: t('quotation.totalPriceRequired'), trigger: 'blur' },
   ],
   deliveryDays: [
-    { required: true, message: '请输入交货天数', trigger: 'blur' },
+    { required: true, message: t('quotation.deliveryDaysRequired'), trigger: 'blur' },
   ],
 };
 
@@ -135,11 +138,11 @@ async function handleSubmit() {
       deliveryDays: form.deliveryDays,
       remarks: form.remarks || undefined,
     });
-    ElMessage.success('报价提交成功');
+    ElMessage.success(t('quotation.submitSuccess'));
     handleClose();
     emit('saved');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '报价提交失败');
+    ElMessage.error(err instanceof Error ? err.message : t('quotation.submitFailed'));
   } finally {
     saving.value = false;
   }

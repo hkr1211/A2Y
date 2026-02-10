@@ -112,7 +112,7 @@
           :label="$t('quotation.deliveryDays')"
           width="100"
         >
-          <template #default="{ row }">{{ row.deliveryDays }}天</template>
+          <template #default="{ row }">{{ row.deliveryDays }}{{ $t('common.days') }}</template>
         </el-table-column>
         <el-table-column :label="$t('quotation.remarks')">
           <template #default="{ row }">
@@ -174,16 +174,20 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { getInquiry } from '@/services/inquiry';
 import { withdrawQuotations } from '@/services/quotation';
 import { createOrderFromInquiry } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
+import { formatDateTime } from '@/utils/date';
 import { INQUIRY_STATUS_TYPES } from '@/utils/constants';
 import QuotationFormDialog from './QuotationFormDialog.vue';
 import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
 import ChatPanel from '@/components/common/ChatPanel.vue';
 import type { Inquiry, InquiryStatus } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   visible: boolean;
@@ -223,7 +227,7 @@ async function loadDetail() {
     detail.value = data;
     updatePermissions();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     detailLoading.value = false;
   }
@@ -281,7 +285,7 @@ function quotationCreatorName(
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 function showQuotationForm() {
@@ -292,11 +296,11 @@ async function handleConvertToOrder() {
   if (!detail.value) return;
   try {
     await createOrderFromInquiry({ inquiryId: detail.value.id });
-    ElMessage.success('订单创建成功');
+    ElMessage.success(t('order.createSuccess'));
     await loadDetail();
     emit('updated');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '创建订单失败');
+    ElMessage.error(err instanceof Error ? err.message : t('order.createFailed'));
   }
 }
 
@@ -304,11 +308,11 @@ async function handleWithdraw() {
   if (!detail.value) return;
   try {
     await withdrawQuotations(detail.value.id);
-    ElMessage.success('报价已撤回');
+    ElMessage.success(t('quotation.withdrawSuccess'));
     await loadDetail();
     emit('updated');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '撤回失败');
+    ElMessage.error(err instanceof Error ? err.message : t('quotation.withdrawFailed'));
   }
 }
 

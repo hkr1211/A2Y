@@ -52,10 +52,12 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { changePassword } from '@/services/auth';
 
+const { t } = useI18n();
 const router = useRouter();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
@@ -67,17 +69,17 @@ const form = reactive({
 });
 
 const rules: FormRules = {
-  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  oldPassword: [{ required: true, message: t('user.oldPasswordRequired'), trigger: 'blur' }],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码至少6个字符', trigger: 'blur' },
+    { required: true, message: t('user.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: t('user.newPasswordMin'), trigger: 'blur' },
   ],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { required: true, message: t('user.confirmPasswordRequired'), trigger: 'blur' },
     {
       validator: (_rule: unknown, value: string, callback: (err?: Error) => void) => {
         if (value !== form.newPassword) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error(t('user.passwordMismatch')));
         } else {
           callback();
         }
@@ -94,10 +96,10 @@ async function handleSubmit() {
   loading.value = true;
   try {
     await changePassword(form.oldPassword, form.newPassword);
-    ElMessage.success('密码修改成功');
+    ElMessage.success(t('user.changePasswordSuccess'));
     router.push('/');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '修改失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.failed'));
   } finally {
     loading.value = false;
   }

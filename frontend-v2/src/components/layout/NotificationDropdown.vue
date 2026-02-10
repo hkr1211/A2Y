@@ -55,6 +55,7 @@ import {
   markAllNotificationsRead,
 } from '@/services/notification';
 import type { NotificationItem } from '@/services/notification';
+import { formatTime as formatTimeUtil } from '@/utils/date';
 
 const unreadCount = ref(0);
 const notifications = ref<NotificationItem[]>([]);
@@ -100,20 +101,7 @@ async function handleClick(item: NotificationItem) {
 }
 
 function formatTime(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  if (date.toDateString() === now.toDateString()) {
-    return date.toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-  return date.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatTimeUtil(dateStr);
 }
 
 onMounted(() => {

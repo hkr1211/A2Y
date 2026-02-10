@@ -49,10 +49,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { createInquiry, updateInquiry } from '@/services/inquiry';
 import type { Inquiry } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   visible: boolean;
@@ -76,14 +79,14 @@ const form = reactive({
 });
 
 const rules: FormRules = {
-  productName: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
+  productName: [{ required: true, message: t('inquiry.productNameRequired'), trigger: 'blur' }],
   materialType: [
-    { required: true, message: '请输入材质类型', trigger: 'blur' },
+    { required: true, message: t('inquiry.materialTypeRequired'), trigger: 'blur' },
   ],
   specifications: [
-    { required: true, message: '请输入规格说明', trigger: 'blur' },
+    { required: true, message: t('inquiry.specificationsRequired'), trigger: 'blur' },
   ],
-  quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }],
+  quantity: [{ required: true, message: t('inquiry.quantityRequired'), trigger: 'blur' }],
 };
 
 watch(
@@ -133,11 +136,11 @@ async function handleSubmit() {
         quantity: form.quantity,
       });
     }
-    ElMessage.success('操作成功');
+    ElMessage.success(t('common.success'));
     handleClose();
     emit('saved');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '操作失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.failed'));
   } finally {
     saving.value = false;
   }

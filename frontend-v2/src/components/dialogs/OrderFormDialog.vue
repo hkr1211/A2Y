@@ -66,9 +66,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { createStandaloneOrder } from '@/services/order';
+
+const { t } = useI18n();
 
 defineProps<{
   visible: boolean;
@@ -94,22 +97,22 @@ const form = reactive({
 
 const rules: FormRules = {
   productName: [
-    { required: true, message: '请输入产品名称', trigger: 'blur' },
+    { required: true, message: t('inquiry.productNameRequired'), trigger: 'blur' },
   ],
   materialType: [
-    { required: true, message: '请输入材质类型', trigger: 'blur' },
+    { required: true, message: t('inquiry.materialTypeRequired'), trigger: 'blur' },
   ],
   specifications: [
-    { required: true, message: '请输入规格说明', trigger: 'blur' },
+    { required: true, message: t('inquiry.specificationsRequired'), trigger: 'blur' },
   ],
   unitPrice: [
-    { required: true, message: '请输入单价', trigger: 'blur' },
+    { required: true, message: t('order.unitPriceRequired'), trigger: 'blur' },
   ],
   quantity: [
-    { required: true, message: '请输入数量', trigger: 'blur' },
+    { required: true, message: t('order.quantityRequired'), trigger: 'blur' },
   ],
   totalPrice: [
-    { required: true, message: '请输入总价', trigger: 'blur' },
+    { required: true, message: t('order.totalPriceRequired'), trigger: 'blur' },
   ],
 };
 
@@ -151,11 +154,11 @@ async function handleSubmit() {
       quantity: form.quantity,
       totalPrice: form.totalPrice,
     });
-    ElMessage.success('订单创建成功');
+    ElMessage.success(t('order.createSuccess'));
     handleClose();
     emit('saved');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '创建失败');
+    ElMessage.error(err instanceof Error ? err.message : t('order.createFailed'));
   } finally {
     saving.value = false;
   }

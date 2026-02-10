@@ -54,7 +54,7 @@
         </el-descriptions-item>
         <el-descriptions-item
           v-if="detail.rejectReason"
-          :label="$t('order.rejectionReason')"
+          :label="$t('order.rejectReason')"
           :span="2"
         >
           {{ detail.rejectReason }}
@@ -135,6 +135,7 @@ import FileUploadPanel from '@/components/common/FileUploadPanel.vue';
 import ChatPanel from '@/components/common/ChatPanel.vue';
 import type { OrderAction } from '@/services/order';
 import { useAuthStore } from '@/stores/auth';
+import { formatDateTime } from '@/utils/date';
 import { ORDER_STATUS_TYPES } from '@/utils/constants';
 import type { Order, OrderStatus } from '@/types';
 
@@ -171,7 +172,7 @@ async function loadDetail() {
   try {
     detail.value = await getOrder(props.order.id);
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     detailLoading.value = false;
   }
@@ -257,18 +258,18 @@ function statusTagType(status: OrderStatus) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 async function handleAction(action: OrderAction) {
   if (!detail.value) return;
   try {
     await performOrderAction(detail.value.id, action);
-    ElMessage.success('操作成功');
+    ElMessage.success(t('common.success'));
     await loadDetail();
     emit('updated');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '操作失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.failed'));
   }
 }
 
@@ -276,13 +277,13 @@ async function handleReject() {
   if (!detail.value) return;
   try {
     const result = await ElMessageBox.prompt(
-      t('order.rejectionReason'),
+      t('order.rejectReason'),
       t('order.reject'),
-      { inputPattern: /.+/, inputErrorMessage: '请输入拒绝原因' }
+      { inputPattern: /.+/, inputErrorMessage: t('order.rejectReasonRequired') }
     );
     const reason = typeof result === 'string' ? result : result.value;
     await performOrderAction(detail.value.id, 'reject', reason);
-    ElMessage.success('订单已拒绝');
+    ElMessage.success(t('order.rejectSuccess'));
     await loadDetail();
     emit('updated');
   } catch {

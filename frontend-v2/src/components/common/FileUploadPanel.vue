@@ -64,11 +64,14 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import type { UploadRawFile, UploadRequestOptions } from 'element-plus';
 import { uploadFile, getDownloadUrl, deleteFile } from '@/services/file';
 import type { FileAttachmentResponse } from '@/services/file';
 import { useAuthStore } from '@/stores/auth';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   files: FileAttachmentResponse[];
@@ -104,7 +107,7 @@ function canDelete(file: FileAttachmentResponse): boolean {
 
 function handleBeforeUpload(rawFile: UploadRawFile): boolean {
   if (rawFile.size > MAX_SIZE) {
-    ElMessage.error('文件大小不能超过 20MB');
+    ElMessage.error(t('file.fileTooLarge'));
     return false;
   }
   return true;
@@ -117,10 +120,10 @@ async function handleUpload(options: UploadRequestOptions) {
       props.relatedId,
       props.relatedType
     );
-    ElMessage.success('上传成功');
+    ElMessage.success(t('file.uploadSuccess'));
     emit('uploaded');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '上传失败');
+    ElMessage.error(err instanceof Error ? err.message : t('file.uploadFailed'));
   }
 }
 
@@ -136,17 +139,17 @@ async function handleDownload(file: FileAttachmentResponse) {
     a.click();
     document.body.removeChild(a);
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '下载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('file.downloadFailed'));
   }
 }
 
 async function handleDelete(file: FileAttachmentResponse) {
   try {
     await deleteFile(file.id);
-    ElMessage.success('删除成功');
+    ElMessage.success(t('common.deleteSuccess'));
     emit('uploaded');
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '删除失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.deleteFailed'));
   }
 }
 </script>

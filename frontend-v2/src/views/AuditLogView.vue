@@ -13,11 +13,11 @@
           style="width: 140px"
           @change="loadLogs"
         >
-          <el-option value="inquiry" label="询单" />
-          <el-option value="order" label="订单" />
-          <el-option value="quotation" label="报价" />
-          <el-option value="user" label="用户" />
-          <el-option value="file" label="文件" />
+          <el-option value="inquiry" :label="$t('audit.targetInquiry')" />
+          <el-option value="order" :label="$t('audit.targetOrder')" />
+          <el-option value="quotation" :label="$t('audit.targetQuotation')" />
+          <el-option value="user" :label="$t('audit.targetUser')" />
+          <el-option value="file" :label="$t('audit.targetFile')" />
         </el-select>
         <el-date-picker
           v-model="dateRange"
@@ -74,10 +74,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { usePagination } from '@/composables/usePagination';
 import { getAuditLogs } from '@/services/auditLog';
+import { formatDateTime } from '@/utils/date';
 import type { AuditLogItem } from '@/services/auditLog';
+
+const { t } = useI18n();
 
 const { loading, pagination, handlePageChange, handleSizeChange } =
   usePagination();
@@ -99,14 +103,14 @@ async function loadLogs() {
     logs.value = data.items;
     pagination.total = data.total;
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('zh-CN');
+  return formatDateTime(dateStr);
 }
 
 watch(() => pagination.page, () => loadLogs());

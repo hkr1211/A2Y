@@ -24,9 +24,9 @@
           style="width: 140px"
           @change="loadUsers"
         >
-          <el-option value="admin" label="Admin" />
-          <el-option value="buyer" label="Buyer" />
-          <el-option value="supplier" label="Supplier" />
+          <el-option value="admin" :label="$t('user.roleAdmin')" />
+          <el-option value="buyer" :label="$t('user.roleBuyer')" />
+          <el-option value="supplier" :label="$t('user.roleSupplier')" />
         </el-select>
       </div>
 
@@ -96,11 +96,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { usePagination } from '@/composables/usePagination';
 import { getUsers, deleteUser, resetPassword } from '@/services/user';
 import UserFormDialog from '@/components/dialogs/UserFormDialog.vue';
 import type { User } from '@/types';
+
+const { t } = useI18n();
 
 const { loading, pagination, handlePageChange, handleSizeChange } =
   usePagination();
@@ -123,7 +126,7 @@ async function loadUsers() {
     users.value = data.items;
     pagination.total = data.total;
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '加载失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -141,13 +144,17 @@ function showEditDialog(user: User) {
 
 async function handleResetPassword(user: User) {
   try {
-    const result = await ElMessageBox.prompt('请输入新密码', '重置密码', {
-      inputPattern: /^.{6,}$/,
-      inputErrorMessage: '密码至少6个字符',
-    });
+    const result = await ElMessageBox.prompt(
+      t('user.resetPasswordPrompt'),
+      t('user.resetPasswordTitle'),
+      {
+        inputPattern: /^.{6,}$/,
+        inputErrorMessage: t('user.resetPasswordMin'),
+      }
+    );
     const newPwd = typeof result === 'string' ? result : result.value;
     await resetPassword(user.id, newPwd);
-    ElMessage.success('密码已重置');
+    ElMessage.success(t('user.resetPasswordSuccess'));
   } catch {
     // User cancelled
   }
@@ -156,10 +163,10 @@ async function handleResetPassword(user: User) {
 async function handleDelete(id: string) {
   try {
     await deleteUser(id);
-    ElMessage.success('用户已删除');
+    ElMessage.success(t('user.deleteSuccess'));
     await loadUsers();
   } catch (err) {
-    ElMessage.error(err instanceof Error ? err.message : '删除失败');
+    ElMessage.error(err instanceof Error ? err.message : t('common.deleteFailed'));
   }
 }
 
